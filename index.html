@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CeleNails</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --rosa:#e8a0b8;--rosa-fuerte:#c76b8e;--malva:#b794d4;--nude:#f5e6dc;
+  --dorado:#d4a574;--crema:#fdf8f5;--blanco:#ffffff;--texto:#2d1b2e;
+  --texto-suave:#7a6a76;--borde:#f0e6ec;--bg:#faf6f8;--verde:#4caf7d;
+  --rojo:#e85d75;--rojo-fuerte:#c7385c;
+  --sombra-sm:0 1px 3px rgba(45,27,46,.06),0 1px 2px rgba(45,27,46,.04);
+  --sombra-md:0 4px 12px rgba(45,27,46,.07),0 2px 4px rgba(45,27,46,.04);
+  --sombra-lg:0 12px 32px rgba(45,27,46,.10),0 4px 8px rgba(45,27,46,.05);
+  --sombra-xl:0 24px 48px rgba(45,27,46,.14);
+  --radio-sm:8px;--radio-md:14px;--radio-lg:20px;--radio-xl:28px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--texto);min-height:100vh;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;overscroll-behavior:none;}
+h1,h2,h3,h4{font-weight:600;letter-spacing:-.01em;}
+
+#loader{position:fixed;inset:0;background:linear-gradient(135deg,#c76b8e 0%,#b794d4 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .6s ease,visibility .6s ease;}
+#loader.oculto{opacity:0;visibility:hidden;}
+.loader-una{width:110px;height:130px;animation:flotar 2.4s ease-in-out infinite;}
+@keyframes flotar{0%,100%{transform:translateY(0) rotate(-3deg);}50%{transform:translateY(-10px) rotate(3deg);}}
+.loader-titulo{color:#fff;font-size:1.85rem;font-weight:600;letter-spacing:.02em;margin-top:1rem;}
+.loader-titulo span{font-weight:300;opacity:.85;}
+.barra{width:240px;height:3px;background:rgba(255,255,255,.2);border-radius:10px;margin-top:1.5rem;overflow:hidden;}
+.barra-progreso{height:100%;width:0%;background:#fff;border-radius:10px;transition:width .3s ease;}
+#loaderTexto{color:rgba(255,255,255,.85);margin-top:1rem;font-size:.8rem;letter-spacing:.05em;font-weight:400;}
+
+.topbar{background:rgba(255,255,255,.9);border-bottom:1px solid var(--borde);padding:1rem 1.25rem;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+.topbar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap;}
+.marca{display:flex;align-items:center;gap:.6rem;}
+.marca-logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--rosa-fuerte),var(--malva));display:flex;align-items:center;justify-content:center;padding:5px;}
+.marca-txt h1{font-size:1.05rem;font-weight:600;color:var(--texto);line-height:1.1;}
+.marca-txt p{font-size:.65rem;color:var(--texto-suave);font-weight:500;letter-spacing:.08em;text-transform:uppercase;}
+.user-chip{display:flex;align-items:center;gap:.5rem;padding:.35rem .7rem .35rem .35rem;background:var(--crema);border:1px solid var(--borde);border-radius:100px;font-size:.75rem;font-weight:500;color:var(--texto);}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--rosa),var(--malva));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:.65rem;}
+
+nav{background:var(--blanco);border-bottom:1px solid var(--borde);padding:0 1.25rem;position:sticky;top:71px;z-index:99;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;gap:.15rem;min-width:max-content;}
+nav button{border:none;background:transparent;color:var(--texto-suave);padding:.9rem 1rem;font-family:inherit;font-size:.82rem;font-weight:500;cursor:pointer;transition:.2s;border-bottom:2px solid transparent;display:flex;align-items:center;gap:.4rem;white-space:nowrap;}
+nav button svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+nav button.activo{color:var(--rosa-fuerte);border-bottom-color:var(--rosa-fuerte);font-weight:600;}
+
+main{max-width:1200px;margin:0 auto;padding:1.5rem 1.25rem 6rem;}
+.seccion{display:none;animation:fadeUp .4s ease;}
+.seccion.activa{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.seccion-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap;}
+.seccion-head h2{font-size:1.35rem;color:var(--texto);}
+.seccion-head p{color:var(--texto-suave);font-size:.82rem;margin-top:.2rem;}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;padding:.65rem 1.1rem;font-family:inherit;font-size:.82rem;font-weight:600;border:none;border-radius:var(--radio-md);cursor:pointer;transition:.2s;text-decoration:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;}
+.btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.btn:active{transform:translateY(1px);}
+.btn-primario{background:linear-gradient(135deg,var(--rosa-fuerte),var(--malva));color:#fff;box-shadow:0 4px 12px rgba(199,107,142,.28);}
+.btn-secundario{background:var(--blanco);color:var(--texto);border:1px solid var(--borde);box-shadow:var(--sombra-sm);}
+.btn-peligro{background:linear-gradient(135deg,#e85d75,#c7385c);color:#fff;}
+.btn-verde{background:linear-gradient(135deg,#4caf7d,#3d8f66);color:#fff;}
+.btn-sm{padding:.45rem .8rem;font-size:.75rem;border-radius:var(--radio-sm);}
+.btn-icon{width:34px;height:34px;padding:0;border-radius:var(--radio-sm);background:var(--blanco);border:1px solid var(--borde);color:var(--texto-suave);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:.2s;}
+.btn-icon svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.75rem;margin-bottom:1.5rem;}
+.stat{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--radio-lg);padding:1rem 1.15rem;box-shadow:var(--sombra-sm);position:relative;overflow:hidden;}
+.stat-icon{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--crema),#f9eff4);display:flex;align-items:center;justify-content:center;margin-bottom:.6rem;}
+.stat-icon svg{width:16px;height:16px;stroke:var(--rosa-fuerte);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.stat.verde .stat-icon{background:linear-gradient(135deg,#e4f5e9,#d3eedd);}
+.stat.verde .stat-icon svg{stroke:var(--verde);}
+.stat.rojo .stat-icon{background:linear-gradient(135deg,#fbeaf1,#f8d7e2);}
+.stat.rojo .stat-icon svg{stroke:var(--rojo-fuerte);}
+.stat-num{font-size:1.25rem;font-weight:600;color:var(--texto);line-height:1.1;word-break:break-word;}
+.stat.verde .stat-num{color:var(--verde);}
+.stat.rojo .stat-num{color:var(--rojo-fuerte);}
+.stat-lbl{font-size:.68rem;color:var(--texto-suave);font-weight:500;margin-top:.25rem;text-transform:uppercase;letter-spacing:.04em;}
+
+.card{background:var(--blanco);border:1px solid var(--borde);border-radius:var(--radio-lg);padding:1.25rem;box-shadow:var(--sombra-sm);margin-bottom:1.25rem;}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem;}
+.card-head h3{font-size:.95rem;color:var(--texto);display:flex;align-items:center;gap:.4rem;}
+.card-head h3 svg{width:16px;height:16px;stroke:var(--rosa-fuerte);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.75rem;}
+.field{display:flex;flex-direction:column;gap:.35rem;}
+.field label{font-size:.7rem;font-weight:600;color:var(--texto-suave);text-transform:uppercase;letter-spacing:.05em;}
+.input-wrap{position:relative;display:flex;align-items:center;}
+.input-prefix{position:absolute;left:11px;color:var(--texto-suave);font-size:.8rem;font-weight:500;pointer-events:none;}
+.input-suffix{position:absolute;right:11px;color:var(--texto-suave);font-size:.8rem;font-weight:600;pointer-events:none;}
+input,select,textarea{width:100%;padding:.65rem .85rem;font-family:inherit;font-size:.82rem;color:var(--texto);background:var(--blanco);border:1.5px solid var(--borde);border-radius:var(--radio-md);outline:none;transition:.2s;-webkit-appearance:none;}
+.input-wrap.prefijo input{padding-left:1.85rem;}
+.input-wrap.sufijo input{padding-right:2.3rem;}
+input:focus,select:focus,textarea:focus{border-color:var(--rosa-fuerte);box-shadow:0 0 0 3px rgba(199,107,142,.10);}
+select{cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a6a76' stroke-width='2.5' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 11px center;padding-right:2rem;}
+
+.pago-box{background:linear-gradient(135deg,#fdf8f5,#fbeaf1);border:1px solid var(--borde);border-radius:var(--radio-md);padding:1rem;margin-top:.85rem;}
+.pago-box-head{display:flex;align-items:center;gap:.4rem;font-size:.75rem;font-weight:600;color:var(--rosa-fuerte);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.7rem;}
+.pago-box-head svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.metodo-pills{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.7rem;}
+.metodo-pill{flex:1;min-width:80px;padding:.6rem .7rem;border-radius:var(--radio-sm);border:1.5px solid var(--borde);background:var(--blanco);cursor:pointer;transition:.2s;display:flex;flex-direction:column;align-items:center;gap:.2rem;font-family:inherit;font-size:.7rem;font-weight:600;color:var(--texto-suave);}
+.metodo-pill svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.metodo-pill.activo{background:linear-gradient(135deg,var(--rosa-fuerte),var(--malva));color:#fff;border-color:transparent;}
+.recargo-panel{display:none;margin-top:.6rem;padding-top:.7rem;border-top:1px dashed #e8d5e0;}
+.recargo-panel.visible{display:block;}
+.recargo-hint{font-size:.72rem;color:var(--texto-suave);margin-bottom:.55rem;line-height:1.4;}
+.total-box{margin-top:.7rem;padding:.8rem .9rem;background:var(--blanco);border-radius:var(--radio-sm);border:1px solid var(--borde);display:flex;flex-direction:column;gap:.35rem;}
+.total-row{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;color:var(--texto-suave);}
+.total-row.final{font-size:.92rem;color:var(--texto);font-weight:700;padding-top:.4rem;border-top:1px solid var(--borde);}
+.total-row.final .val{color:var(--rosa-fuerte);font-size:1.05rem;}
+
+.buscador{margin-bottom:1rem;position:relative;}
+.buscador svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--texto-suave);fill:none;stroke-width:2;stroke-linecap:round;}
+.buscador input{padding-left:2.2rem;background:var(--crema);border-color:transparent;}
+
+.lista{display:flex;flex-direction:column;gap:.5rem;}
+.item{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.9rem 1rem;background:var(--blanco);border:1px solid var(--borde);border-radius:var(--radio-md);flex-wrap:wrap;position:relative;}
+.item.pagada{border-left:3px solid var(--verde);}
+.item.porcobrar{border-left:3px solid var(--dorado);}
+.item.gasto{border-left:3px solid var(--rojo);}
+.item.inversion{border-left:3px solid var(--malva);}
+.item-info{flex:1;min-width:180px;}
+.item-info strong{font-size:.85rem;font-weight:600;color:var(--texto);display:block;}
+.item-info small{font-size:.75rem;color:var(--texto-suave);display:block;margin-top:.15rem;}
+.item-info .pago-detalle{font-size:.72rem;color:var(--rosa-fuerte);font-weight:600;margin-top:.3rem;display:inline-flex;align-items:center;gap:.3rem;background:#fbeaf1;padding:.1rem .5rem;border-radius:100px;}
+.item-info .pago-detalle.verde{background:#e4f5e9;color:#2d7d4f;}
+.item-info .pago-detalle.rojo{background:#fbe0e6;color:#c7385c;}
+.item-right{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
+
+.badge{display:inline-flex;align-items:center;gap:.25rem;padding:.25rem .6rem;border-radius:100px;font-size:.68rem;font-weight:600;}
+.badge-rosa{background:#fbeaf1;color:var(--rosa-fuerte);}
+.badge-verde{background:#e4f5e9;color:#2d7d4f;}
+.badge-amarillo{background:#fdf4dc;color:#a97a1c;}
+.badge-gris{background:var(--crema);color:var(--texto-suave);}
+.badge-lila{background:#f0e8fa;color:#7a4fb8;}
+.badge-rojo{background:#fbe0e6;color:#c7385c;}
+.badge-dorado{background:#f8efe0;color:#a8763d;}
+
+.vacio{text-align:center;padding:2rem 1rem;color:var(--texto-suave);font-size:.82rem;}
+.vacio svg{width:40px;height:40px;stroke:#d9c8d1;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;margin-bottom:.6rem;}
+
+.cliente-item{display:flex;align-items:center;gap:.8rem;padding:.9rem 1rem;background:var(--blanco);border:1px solid var(--borde);border-radius:var(--radio-md);margin-bottom:.5rem;}
+.cliente-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:.85rem;flex-shrink:0;}
+.cliente-info{flex:1;min-width:0;}
+.cliente-info strong{font-size:.85rem;font-weight:600;color:var(--texto);display:block;}
+.cliente-info .meta{font-size:.75rem;color:var(--texto-suave);display:flex;flex-wrap:wrap;gap:.6rem;margin-top:.15rem;}
+.cliente-info .meta span{display:inline-flex;align-items:center;gap:.25rem;}
+.cliente-info .meta svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+
+.fab{position:fixed;bottom:1.5rem;right:1.5rem;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--rosa-fuerte),var(--malva));color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(199,107,142,.4);z-index:50;}
+.fab svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;}
+
+.toast-container{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:.4rem;pointer-events:none;width:calc(100% - 3rem);max-width:400px;}
+.toast{background:var(--texto);color:#fff;padding:.65rem 1.1rem;border-radius:100px;font-size:.8rem;font-weight:500;box-shadow:var(--sombra-lg);display:flex;align-items:center;gap:.45rem;pointer-events:auto;}
+.toast svg{width:15px;height:15px;stroke:#7ee0a8;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(45,27,46,.5);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:1000;opacity:0;visibility:hidden;transition:.25s;}
+.modal-overlay.abierto{opacity:1;visibility:visible;}
+.modal{background:var(--blanco);border-radius:var(--radio-xl);width:100%;max-width:480px;box-shadow:var(--sombra-xl);transform:scale(.95) translateY(20px);transition:.3s cubic-bezier(.34,1.56,.64,1);max-height:90vh;overflow-y:auto;}
+.modal-overlay.abierto .modal{transform:scale(1) translateY(0);}
+.modal-head{padding:1.25rem 1.5rem .9rem;display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;border-bottom:1px solid var(--borde);}
+.modal-head h3{font-size:1.05rem;color:var(--texto);}
+.modal-head p{font-size:.75rem;color:var(--texto-suave);margin-top:.2rem;}
+.modal-cerrar{width:30px;height:30px;border-radius:8px;border:none;background:var(--crema);color:var(--texto-suave);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.modal-cerrar svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.modal-body{padding:1.25rem 1.5rem;}
+.modal-foot{padding:.9rem 1.5rem 1.25rem;display:flex;gap:.6rem;justify-content:flex-end;border-top:1px solid var(--borde);flex-wrap:wrap;}
+.modal-foot .btn{flex:1;min-width:110px;}
+@media(min-width:480px){.modal-foot .btn{flex:0 0 auto;}}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.modal-grid .full{grid-column:1/-1;}
+@media(max-width:480px){.modal-grid{grid-template-columns:1fr;}}
+
+footer{text-align:center;padding:1.5rem;color:var(--texto-suave);font-size:.75rem;border-top:1px solid var(--borde);background:var(--blanco);}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute;">
+  <defs>
+    <linearGradient id="gradUna" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffb6d5"/><stop offset="45%" stop-color="#e895b8"/><stop offset="100%" stop-color="#c76b8e"/>
+    </linearGradient>
+    <linearGradient id="gradBrillo" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="gradDedo" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffe0d0"/><stop offset="100%" stop-color="#f5c9b8"/>
+    </radialGradient>
+    <symbol id="una" viewBox="0 0 60 90">
+      <path d="M14 20 Q14 5 30 5 Q46 5 46 20 L46 78 Q46 86 40 86 L20 86 Q14 86 14 78 Z" fill="url(#gradDedo)" stroke="#e5b8a5" stroke-width="0.8"/>
+      <path d="M19 22 Q19 14 30 14 Q41 14 41 22 L41 44 Q41 50 36 50 L24 50 Q19 50 19 44 Z" fill="url(#gradUna)"/>
+      <path d="M19 22 Q19 14 30 14 Q41 14 41 22 Q41 18 30 17 Q19 18 19 22 Z" fill="#ffffff" opacity="0.4"/>
+      <ellipse cx="26" cy="24" rx="5" ry="8" fill="url(#gradBrillo)" opacity="0.85"/>
+      <ellipse cx="36" cy="40" rx="1.8" ry="3" fill="#ffffff" opacity="0.5"/>
+      <path d="M30 34 C29 32 26 32 26 34.5 C26 37 30 39 30 39 C30 39 34 37 34 34.5 C34 32 31 32 30 34 Z" fill="#ffffff" opacity="0.55"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="loader">
+  <svg class="loader-una" viewBox="0 0 60 90"><use href="#una"/></svg>
+  <div class="loader-titulo">Cele<span>Nails</span></div>
+  <div class="barra"><div class="barra-progreso" id="progreso"></div></div>
+  <div id="loaderTexto">Conectando con la nube...</div>
+</div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="marca">
+      <div class="marca-logo"><svg viewBox="0 0 60 90" style="width:30px;height:30px;fill:none;"><use href="#una"/></svg></div>
+      <div class="marca-txt"><h1>CeleNails</h1><p>Nail Studio</p></div>
+    </div>
+    <div class="user-chip"><div class="user-avatar">C</div><span>Cele</span></div>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-inner">
+    <button class="activo" data-seccion="inicio"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Inicio</button>
+    <button data-seccion="clientas"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Clientas</button>
+    <button data-seccion="citas"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Citas</button>
+    <button data-seccion="servicios"><svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5z"/></svg>Servicios</button>
+    <button data-seccion="ingresos"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>Ingresos</button>
+    <button data-seccion="gastos"><svg viewBox="0 0 24 24"><path d="M12 2v20M17 19H9.5a3.5 3.5 0 010-7h5a3.5 3.5 0 000-7H6"/></svg>Gastos</button>
+  </div>
+</nav>
+
+<main>
+  <section id="inicio" class="seccion activa">
+    <div class="seccion-head"><div><h2>Hola, Cele ✨</h2><p>Resumen financiero de tu estudio.</p></div></div>
+    <div class="stats" id="stats"></div>
+    <div class="card"><div class="card-head"><h3>Balance del mes</h3></div><div id="balanceMes"></div></div>
+    <div class="card"><div class="card-head"><h3>Próximas citas</h3></div><div class="lista" id="proximasCitas"></div></div>
+  </section>
+
+  <section id="clientas" class="seccion">
+    <div class="seccion-head"><div><h2>Clientas</h2><p>Gestiona tu agenda de contactos.</p></div><button class="btn btn-primario" onclick="abrirModalClienta()">+ Nueva</button></div>
+    <div class="card">
+      <div class="buscador"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input id="buscarClienta" placeholder="Buscar..." oninput="renderClientas()"></div>
+      <div id="listaClientas"></div>
+    </div>
+  </section>
+
+  <section id="citas" class="seccion">
+    <div class="seccion-head"><div><h2>Citas</h2><p>Agenda y controla pagos.</p></div></div>
+    <div class="card">
+      <div class="card-head"><h3>Agendar cita</h3></div>
+      <div class="form-grid">
+        <div class="field"><label>Clienta</label><select id="citaClienta"></select></div>
+        <div class="field"><label>Servicio</label><select id="citaServicio" onchange="actualizarTotalCita()"></select></div>
+        <div class="field"><label>Fecha</label><input type="date" id="citaFecha"></div>
+        <div class="field"><label>Hora</label><input type="time" id="citaHora"></div>
+        <div class="field"><label>Estado servicio</label><select id="citaEstado"><option>Pendiente</option><option>Confirmada</option><option>Realizada</option></select></div>
+        <div class="field"><label>Estado pago</label><select id="citaPagado"><option>Por cobrar</option><option>Pagado</option></select></div>
+      </div>
+      <div class="pago-box">
+        <div class="pago-box-head">Método de pago</div>
+        <div class="metodo-pills" id="metodoPills">
+          <button type="button" class="metodo-pill activo" data-metodo="Efectivo" onclick="seleccionarMetodo('Efectivo')">Efectivo</button>
+          <button type="button" class="metodo-pill" data-metodo="Transferencia" onclick="seleccionarMetodo('Transferencia')">Transfer.</button>
+          <button type="button" class="metodo-pill" data-metodo="Mixto" onclick="seleccionarMetodo('Mixto')">Mixto</button>
+        </div>
+        <div class="recargo-panel" id="recargoPanel">
+          <div class="recargo-hint">% de recargo sobre el subtotal.</div>
+          <div class="field"><label>% recargo</label><div class="input-wrap sufijo"><input type="number" id="citaRecargo" value="0" min="0" max="100" step="0.5" oninput="actualizarTotalCita()"><span class="input-suffix">%</span></div></div>
+        </div>
+        <div class="total-box">
+          <div class="total-row"><span>Subtotal</span><span id="citaSubtotal">$0.00 CUP</span></div>
+          <div class="total-row" id="citaRecargoRow" style="display:none;"><span>Recargo</span><span id="citaRecargoVal">+$0.00 CUP</span></div>
+          <div class="total-row final"><span>Total</span><span class="val" id="citaTotal">$0.00 CUP</span></div>
+        </div>
+      </div>
+      <br>
+      <button class="btn btn-primario" onclick="agregarCita()">Guardar cita</button>
+    </div>
+    <div class="card"><div class="card-head"><h3>Agenda</h3></div><div class="lista" id="listaCitas"></div></div>
+  </section>
+
+  <section id="servicios" class="seccion">
+    <div class="seccion-head"><div><h2>Servicios</h2><p>Carta de precios en CUP.</p></div></div>
+    <div class="card">
+      <div class="card-head"><h3>Añadir servicio</h3></div>
+      <div class="form-grid">
+        <div class="field"><label>Nombre</label><input id="servNombre" placeholder="Manicura semipermanente"></div>
+        <div class="field"><label>Precio</label><div class="input-wrap prefijo"><span class="input-prefix">$</span><input type="number" id="servPrecio" placeholder="1500"></div></div>
+        <div class="field"><label>Duración</label><div class="input-wrap sufijo"><input type="number" id="servDuracion" placeholder="60"><span class="input-suffix">min</span></div></div>
+      </div>
+      <br>
+      <button class="btn btn-primario" onclick="agregarServicio()">Guardar servicio</button>
+    </div>
+    <div class="card"><div class="card-head"><h3>Carta</h3></div><div class="lista" id="listaServicios"></div></div>
+  </section>
+
+  <section id="ingresos" class="seccion">
+    <div class="seccion-head"><div><h2>Ingresos</h2><p>Pagos de citas se registran solos.</p></div></div>
+    <div class="card">
+      <div class="card-head"><h3>Ingreso manual</h3></div>
+      <div class="form-grid">
+        <div class="field"><label>Clienta</label><select id="ingClienta"></select></div>
+        <div class="field"><label>Servicio</label><select id="ingServicio" onchange="alCambiarServicioIngreso()"></select></div>
+        <div class="field"><label>Importe</label><div class="input-wrap prefijo"><span class="input-prefix">$</span><input type="number" id="ingImporte" placeholder="1500" oninput="actualizarTotalIngreso()"></div></div>
+        <div class="field"><label>Fecha</label><input type="date" id="ingFecha"></div>
+      </div>
+      <div class="pago-box">
+        <div class="pago-box-head">Método de pago</div>
+        <div class="metodo-pills" id="metodoPillsIng">
+          <button type="button" class="metodo-pill activo" data-metodo="Efectivo" onclick="seleccionarMetodoIng('Efectivo')">Efectivo</button>
+          <button type="button" class="metodo-pill" data-metodo="Transferencia" onclick="seleccionarMetodoIng('Transferencia')">Transfer.</button>
+          <button type="button" class="metodo-pill" data-metodo="Mixto" onclick="seleccionarMetodoIng('Mixto')">Mixto</button>
+        </div>
+        <div class="recargo-panel" id="recargoPanelIng">
+          <div class="recargo-hint">% de recargo.</div>
+          <div class="field"><label>% recargo</label><div class="input-wrap sufijo"><input type="number" id="ingRecargo" value="0" min="0" max="100" step="0.5" oninput="actualizarTotalIngreso()"><span class="input-suffix">%</span></div></div>
+        </div>
+        <div class="total-box">
+          <div class="total-row"><span>Subtotal</span><span id="ingSubtotal">$0.00 CUP</span></div>
+          <div class="total-row" id="ingRecargoRow" style="display:none;"><span>Recargo</span><span id="ingRecargoVal">+$0.00 CUP</span></div>
+          <div class="total-row final"><span>Total</span><span class="val" id="ingTotal">$0.00 CUP</span></div>
+        </div>
+      </div>
+      <br>
+      <button class="btn btn-primario" onclick="agregarIngreso()">Guardar ingreso</button>
+    </div>
+    <div class="card"><div class="card-head"><h3>Resumen</h3></div><div class="stats" id="statsIngresos"></div><div class="lista" id="listaIngresos"></div></div>
+  </section>
+
+  <section id="gastos" class="seccion">
+    <div class="seccion-head"><div><h2>Gastos e Inversiones</h2><p>Controla tu ganancia real.</p></div></div>
+    <div class="card">
+      <div class="card-head"><h3>Registrar gasto</h3></div>
+      <div class="form-grid">
+        <div class="field"><label>Concepto</label><input id="gasConcepto" placeholder="Esmalte OPI"></div>
+        <div class="field"><label>Categoría</label><select id="gasCategoria"><option>Insumos</option><option>Herramientas</option><option>Marketing</option><option>Alquiler</option><option>Servicios</option><option>Formación</option><option>Transporte</option><option>Otros</option></select></div>
+        <div class="field"><label>Tipo</label><select id="gasOrigen"><option>Gasto</option><option>Inversión</option></select></div>
+        <div class="field"><label>Proveedor</label><input id="gasProveedor" placeholder="Opcional"></div>
+        <div class="field"><label>Importe</label><div class="input-wrap prefijo"><span class="input-prefix">$</span><input type="number" id="gasImporte" placeholder="500" oninput="actualizarTotalGasto()"></div></div>
+        <div class="field"><label>Fecha</label><input type="date" id="gasFecha"></div>
+      </div>
+      <div class="pago-box">
+        <div class="pago-box-head">Método de pago</div>
+        <div class="metodo-pills" id="metodoPillsGas">
+          <button type="button" class="metodo-pill activo" data-metodo="Efectivo" onclick="seleccionarMetodoGas('Efectivo')">Efectivo</button>
+          <button type="button" class="metodo-pill" data-metodo="Transferencia" onclick="seleccionarMetodoGas('Transferencia')">Transfer.</button>
+          <button type="button" class="metodo-pill" data-metodo="Mixto" onclick="seleccionarMetodoGas('Mixto')">Mixto</button>
+        </div>
+        <div class="recargo-panel" id="recargoPanelGas">
+          <div class="recargo-hint">% comisión bancaria.</div>
+          <div class="field"><label>% recargo</label><div class="input-wrap sufijo"><input type="number" id="gasRecargo" value="0" min="0" max="100" step="0.5" oninput="actualizarTotalGasto()"><span class="input-suffix">%</span></div></div>
+        </div>
+        <div class="total-box">
+          <div class="total-row"><span>Subtotal</span><span id="gasSubtotal">$0.00 CUP</span></div>
+          <div class="total-row" id="gasRecargoRow" style="display:none;"><span>Recargo</span><span id="gasRecargoVal">+$0.00 CUP</span></div>
+          <div class="total-row final"><span>Total pagado</span><span class="val" id="gasTotal">$0.00 CUP</span></div>
+        </div>
+      </div>
+      <br>
+      <button class="btn btn-primario" onclick="agregarGasto()">Guardar gasto</button>
+    </div>
+    <div class="card"><div class="card-head"><h3>Resumen</h3></div><div class="stats" id="statsGastos"></div><div class="lista" id="listaGastos"></div></div>
+  </section>
+</main>
+
+<button class="fab" onclick="abrirModalClienta()">+</button>
+
+<div class="modal-overlay" id="modalClienta">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-head"><div><h3 id="modalTitulo">Nueva clienta</h3><p>Completa los datos.</p></div><button class="modal-cerrar" onclick="cerrarModalClienta()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div class="field full"><label>Nombre completo *</label><input id="cliNombre" placeholder="María López García"></div>
+        <div class="field"><label>Teléfono</label><input id="cliTel" placeholder="5555 1234"></div>
+        <div class="field"><label>Email</label><input id="cliEmail" placeholder="maria@email.com"></div>
+        <div class="field full"><label>Notas</label><textarea id="cliNotas" rows="2" placeholder="Alergias, preferencias..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secundario" onclick="cerrarModalClienta()">Cancelar</button>
+      <button class="btn btn-primario" onclick="agregarClienta()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalConfirmar">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px;">
+    <div class="modal-head"><div><h3>¿Estás segura?</h3><p id="confirmarTexto"></p></div></div>
+    <div class="modal-foot">
+      <button class="btn btn-secundario" onclick="cerrarConfirmar()">Cancelar</button>
+      <button class="btn btn-peligro" id="confirmarBtn">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+<footer>© 2025 CeleNails Studio · Precios en CUP · Conectado a la nube</footer>
+
+<script>
+// =====================================================
+// ⚙️ CONFIGURACIÓN — SOLO CAMBIA ESTAS 2 LÍNEAS
+// =====================================================
+// En Supabase → Project Settings → API encontrarás:
+//   - Project URL   → pégala en supabaseUrl
+//   - anon public   → pégala en supabaseKey
+// =====================================================
+const supabaseUrl = 'https://jafuauscwolycybidnbq.supabase.co';   // Ej: 'https://abcdefgh.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImphZnVhdXNjd29seWN5YmlkbmJxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA5MTExMDcsImV4cCI6MjEwNjQ4NzEwN30.E-KkjtGaHwpUKW_ffvx4X7kcmtQTwUSu87GHccwXhx0';        // Ej: 'eyJhbGciOiJIUzI1NiIsInR5cCI6...'
+// =====================================================
+
+const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+// Estado en memoria
+let clientas = [];
+let citas = [];
+let servicios = [];
+let ingresos = [];
+let gastos = [];
+
+// =====================================================
+// UTILIDADES
+// =====================================================
+function fmtCUP(n){
+  const num = Number(n)||0;
+  return '$'+num.toLocaleString('es-CU',{minimumFractionDigits:2,maximumFractionDigits:2})+' CUP';
+}
+function escapeHtml(str){
+  if(!str) return '';
+  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]);
+}
+function toast(msg){
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.innerHTML = `<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>${escapeHtml(msg)}`;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 2200);
+}
+
+const PALETA = [
+  ['#c76b8e','#e8a0b8'],['#b794d4','#d4bde8'],['#d4a574','#e8c9a8'],
+  ['#8fa8c9','#b8c8e0'],['#a88fc7','#c9b8e0'],['#d98a8a','#e8b0b0'],
+  ['#8fb8a8','#b8d4c8'],
+];
+function colorPara(nombre){
+  let h = 0;
+  for(let i=0;i<nombre.length;i++) h = (h*31 + nombre.charCodeAt(i)) >>> 0;
+  return PALETA[h % PALETA.length];
+}
+function iniciales(nombre){
+  const p = nombre.trim().split(/\s+/);
+  return ((p[0]?.[0]||'?') + (p[1]?.[0]||'')).toUpperCase();
+}
+function iconoMetodo(m){
+  if(m==='Transferencia') return '↔';
+  if(m==='Mixto') return '◐';
+  return '💵';
+}
+
+// =====================================================
+// SUPABASE — operaciones
+// =====================================================
+async function dbGet(tabla){
+  const { data, error } = await _supabase.from(tabla).select('*').order('created_at', { ascending: false });
+  if(error){ console.error(`Error al leer ${tabla}:`, error.message); return []; }
+  return data || [];
+}
+async function dbInsert(tabla, datos){
+  const { data, error } = await _supabase.from(tabla).insert([datos]).select();
+  if(error){ console.error(`Error al insertar en ${tabla}:`, error.message); return null; }
+  return data?.[0];
+}
+async function dbUpdate(tabla, id, datos){
+  const { error } = await _supabase.from(tabla).update(datos).eq('id', id);
+  if(error){ console.error(`Error al actualizar ${tabla}:`, error.message); return false; }
+  return true;
+}
+async function dbDelete(tabla, id){
+  const { error } = await _supabase.from(tabla).delete().eq('id', id);
+  if(error){ console.error(`Error al eliminar de ${tabla}:`, error.message); return false; }
+  return true;
+}
+
+async function cargarTodo(){
+  const [c, ci, s, i, g] = await Promise.all([
+    dbGet('clientas'),
+    dbGet('citas'),
+    dbGet('servicios'),
+    dbGet('ingresos'),
+    dbGet('gastos')
+  ]);
+  clientas = c;
+  citas = ci;
+  servicios = s;
+  ingresos = i;
+  gastos = g;
+  renderTodo();
+}
+
+// =====================================================
+// NAVEGACIÓN
+// =====================================================
+document.querySelectorAll('nav button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('activo'));
+    btn.classList.add('activo');
+    document.querySelectorAll('.seccion').forEach(s=>s.classList.remove('activa'));
+    document.getElementById(btn.dataset.seccion).classList.add('activa');
+    renderTodo();
+  });
+});
+
+// =====================================================
+// MODALES
+// =====================================================
+let clientaEditandoId = null;
+function abrirModalClienta(id=null){
+  clientaEditandoId = id;
+  const overlay = document.getElementById('modalClienta');
+  const titulo = document.getElementById('modalTitulo');
+  if(id){
+    const c = clientas.find(x => x.id === id);
+    if(!c) return;
+    titulo.textContent = 'Editar clienta';
+    document.getElementById('cliNombre').value = c.nombre;
+    document.getElementById('cliTel').value = c.tel||'';
+    document.getElementById('cliEmail').value = c.email||'';
+    document.getElementById('cliNotas').value = c.notas||'';
+  } else {
+    titulo.textContent = 'Nueva clienta';
+    document.getElementById('cliNombre').value = '';
+    document.getElementById('cliTel').value = '';
+    document.getElementById('cliEmail').value = '';
+    document.getElementById('cliNotas').value = '';
+  }
+  overlay.classList.add('abierto');
+  setTimeout(()=>document.getElementById('cliNombre').focus(),150);
+}
+function cerrarModalClienta(){
+  document.getElementById('modalClienta').classList.remove('abierto');
+  clientaEditandoId = null;
+}
+document.getElementById('modalClienta').addEventListener('click', e => {
+  if(e.target.id === 'modalClienta') cerrarModalClienta();
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){ cerrarModalClienta(); cerrarConfirmar(); }
+});
+
+let confirmarAccion = null;
+function pedirConfirmar(texto, accion){
+  document.getElementById('confirmarTexto').textContent = texto;
+  confirmarAccion = accion;
+  document.getElementById('modalConfirmar').classList.add('abierto');
+}
+function cerrarConfirmar(){
+  document.getElementById('modalConfirmar').classList.remove('abierto');
+  confirmarAccion = null;
+}
+document.getElementById('confirmarBtn').onclick = () => {
+  if(confirmarAccion) confirmarAccion();
+  cerrarConfirmar();
+};
+document.getElementById('modalConfirmar').addEventListener('click', e => {
+  if(e.target.id === 'modalConfirmar') cerrarConfirmar();
+});
+
+// =====================================================
+// CLIENTAS
+// =====================================================
+async function agregarClienta(){
+  const nombre = document.getElementById('cliNombre').value.trim();
+  if(!nombre){ toast('Escribe el nombre'); return; }
+  const datos = {
+    nombre,
+    tel: document.getElementById('cliTel').value.trim(),
+    email: document.getElementById('cliEmail').value.trim(),
+    notas: document.getElementById('cliNotas').value.trim()
+  };
+  if(clientaEditandoId){
+    await dbUpdate('clientas', clientaEditandoId, datos);
+    toast('Clienta actualizada');
+  } else {
+    await dbInsert('clientas', datos);
+    toast('Clienta añadida');
+  }
+  cerrarModalClienta();
+  await cargarTodo();
+}
+function eliminarClienta(id){
+  const c = clientas.find(x => x.id === id);
+  pedirConfirmar(`¿Eliminar a ${c?.nombre||'esta clienta'}?`, async () => {
+    await dbDelete('clientas', id);
+    toast('Clienta eliminada');
+    await cargarTodo();
+  });
+}
+function renderClientas(){
+  const filtro = (document.getElementById('buscarClienta')?.value || '').toLowerCase().trim();
+  const cont = document.getElementById('listaClientas');
+  let lista = clientas;
+  if(filtro){
+    lista = clientas.filter(c =>
+      c.nombre.toLowerCase().includes(filtro) ||
+      (c.tel||'').toLowerCase().includes(filtro) ||
+      (c.email||'').toLowerCase().includes(filtro)
+    );
+  }
+  if(!clientas.length){
+    cont.innerHTML = `<div class="vacio"><div>Aún no tienes clientas registradas</div></div>`;
+    return;
+  }
+  if(!lista.length){
+    cont.innerHTML = `<div class="vacio"><div>No hay resultados</div></div>`;
+    return;
+  }
+  cont.innerHTML = lista.map(c => {
+    const [c1,c2] = colorPara(c.nombre);
+    return `
+    <div class="cliente-item">
+      <div class="cliente-avatar" style="background:linear-gradient(135deg,${c1},${c2});">${iniciales(c.nombre)}</div>
+      <div class="cliente-info">
+        <strong>${escapeHtml(c.nombre)}</strong>
+        <div class="meta">
+          ${c.tel?`<span>📞 ${escapeHtml(c.tel)}</span>`:''}
+          ${c.email?`<span>✉️ ${escapeHtml(c.email)}</span>`:''}
+        </div>
+        ${c.notas?`<div style="font-size:.75rem;color:var(--dorado);font-style:italic;margin-top:.2rem;">📝 ${escapeHtml(c.notas)}</div>`:''}
+      </div>
+      <div style="display:flex;gap:.4rem;">
+        <button class="btn-icon" onclick="abrirModalClienta(${c.id})">✏️</button>
+        <button class="btn-icon" onclick="eliminarClienta(${c.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// =====================================================
+// SERVICIOS
+// =====================================================
+async function agregarServicio(){
+  const nombre = document.getElementById('servNombre').value.trim();
+  if(!nombre){ toast('Escribe el nombre'); return; }
+  await dbInsert('servicios', {
+    nombre,
+    precio: parseFloat(document.getElementById('servPrecio').value)||0,
+    duracion: parseInt(document.getElementById('servDuracion').value)||0
+  });
+  document.getElementById('servNombre').value = '';
+  document.getElementById('servPrecio').value = '';
+  document.getElementById('servDuracion').value = '';
+  toast('Servicio añadido');
+  await cargarTodo();
+}
+function eliminarServicio(id){
+  const s = servicios.find(x => x.id === id);
+  pedirConfirmar(`¿Eliminar "${s?.nombre||''}"?`, async () => {
+    await dbDelete('servicios', id);
+    toast('Servicio eliminado');
+    await cargarTodo();
+  });
+}
+function renderServicios(){
+  const cont = document.getElementById('listaServicios');
+  if(!servicios.length){
+    cont.innerHTML = `<div class="vacio"><div>Aún no has definido servicios</div></div>`;
+    return;
+  }
+  cont.innerHTML = servicios.map(s => `
+    <div class="item">
+      <div class="item-info"><strong>${escapeHtml(s.nombre)}</strong><small>${s.duracion} min</small></div>
+      <div class="item-right">
+        <span class="badge badge-dorado">${fmtCUP(s.precio)}</span>
+        <button class="btn-icon" onclick="eliminarServicio(${s.id})">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+// =====================================================
+// MÉTODOS DE PAGO — CITAS
+// =====================================================
+let metodoCita = 'Efectivo';
+function seleccionarMetodo(m){
+  metodoCita = m;
+  document.querySelectorAll('#metodoPills .metodo-pill').forEach(p => {
+    p.classList.toggle('activo', p.dataset.metodo === m);
+  });
+  document.getElementById('recargoPanel').classList.toggle('visible', m==='Transferencia' || m==='Mixto');
+  if(m!=='Transferencia' && m!=='Mixto') document.getElementById('citaRecargo').value = 0;
+  actualizarTotalCita();
+}
+function actualizarTotalCita(){
+  const servicioId = document.getElementById('citaServicio').value;
+  const servicio = servicios.find(s => s.id == servicioId);
+  const subtotal = servicio ? Number(servicio.precio) : 0;
+  let recargoPct = parseFloat(document.getElementById('citaRecargo').value)||0;
+  if(metodoCita !== 'Transferencia' && metodoCita !== 'Mixto') recargoPct = 0;
+  const recargo = subtotal * (recargoPct/100);
+  const total = subtotal + recargo;
+  document.getElementById('citaSubtotal').textContent = fmtCUP(subtotal);
+  document.getElementById('citaRecargoRow').style.display = recargoPct>0 ? 'flex' : 'none';
+  document.getElementById('citaRecargoVal').textContent = '+'+fmtCUP(recargo)+' ('+recargoPct+'%)';
+  document.getElementById('citaTotal').textContent = fmtCUP(total);
+}
+
+// =====================================================
+// CITAS
+// =====================================================
+async function agregarCita(){
+  const clientaId = document.getElementById('citaClienta').value;
+  const servicioId = document.getElementById('citaServicio').value;
+  const fecha = document.getElementById('citaFecha').value;
+  const hora = document.getElementById('citaHora').value;
+  if(!clientaId || !fecha || !hora){ toast('Completa clienta, fecha y hora'); return; }
+  const clienta = clientas.find(c => c.id == clientaId);
+  const servicio = servicios.find(s => s.id == servicioId);
+  const subtotal = servicio ? Number(servicio.precio) : 0;
+  let recargoPct = parseFloat(document.getElementById('citaRecargo').value)||0;
+  if(metodoCita !== 'Transferencia' && metodoCita !== 'Mixto') recargoPct = 0;
+  const recargo = subtotal * (recargoPct/100);
+  const total = subtotal + recargo;
+  const pagado = document.getElementById('citaPagado').value;
+
+  const citaData = {
+    clienta_id: clientaId,
+    clienta_nombre: clienta ? clienta.nombre : '—',
+    servicio_id: servicioId,
+    servicio_nombre: servicio ? servicio.nombre : '—',
+    subtotal, metodo: metodoCita, recargo_pct: recargoPct, recargo, total,
+    fecha, hora,
+    estado: document.getElementById('citaEstado').value,
+    pagado
+  };
+  const citaInsertada = await dbInsert('citas', citaData);
+
+  if(pagado === 'Pagado' && citaInsertada){
+    const ingresoData = {
+      clienta_id: clientaId,
+      clienta_nombre: citaData.clienta_nombre,
+      servicio_id: servicioId,
+      servicio_nombre: citaData.servicio_nombre,
+      concepto: `${citaData.servicio_nombre} - ${citaData.clienta_nombre}`,
+      subtotal, metodo: metodoCita, recargo_pct: recargoPct, recargo, total,
+      fecha, origen: 'cita', cita_id: citaInsertada.id
+    };
+    const ing = await dbInsert('ingresos', ingresoData);
+    if(ing){
+      await dbUpdate('citas', citaInsertada.id, { ingreso_id: ing.id });
+    }
+  }
+
+  document.getElementById('citaFecha').value = '';
+  document.getElementById('citaHora').value = '';
+  document.getElementById('citaRecargo').value = 0;
+  document.getElementById('citaPagado').value = 'Por cobrar';
+  seleccionarMetodo('Efectivo');
+  toast(pagado==='Pagado' ? 'Cita agendada y pago registrado' : 'Cita agendada');
+  await cargarTodo();
+}
+
+function eliminarCita(id){
+  const c = citas.find(x => x.id === id);
+  pedirConfirmar('¿Eliminar esta cita? Si estaba pagada, se borrará el ingreso.', async () => {
+    if(c && c.ingreso_id){
+      await dbDelete('ingresos', c.ingreso_id);
+    }
+    await dbDelete('citas', id);
+    toast('Cita eliminada');
+    await cargarTodo();
+  });
+}
+
+async function cambiarEstado(id, estado){
+  await dbUpdate('citas', id, { estado });
+  toast('Estado actualizado');
+  await cargarTodo();
+}
+
+async function alternarPagoCita(id){
+  const c = citas.find(x => x.id === id);
+  if(!c) return;
+
+  if(c.pagado === 'Pagado'){
+    if(c.ingreso_id){
+      await dbDelete('ingresos', c.ingreso_id);
+    }
+    await dbUpdate('citas', id, { pagado: 'Por cobrar', ingreso_id: null });
+    toast('Marcada como Por cobrar');
+  } else {
+    const ingresoData = {
+      clienta_id: c.clienta_id,
+      clienta_nombre: c.clienta_nombre,
+      servicio_id: c.servicio_id,
+      servicio_nombre: c.servicio_nombre,
+      concepto: `${c.servicio_nombre} - ${c.clienta_nombre}`,
+      subtotal: c.subtotal, metodo: c.metodo,
+      recargo_pct: c.recargo_pct, recargo: c.recargo, total: c.total,
+      fecha: c.fecha, origen: 'cita', cita_id: c.id
+    };
+    const ing = await dbInsert('ingresos', ingresoData);
+    if(ing){
+      await dbUpdate('citas', id, { pagado: 'Pagado', ingreso_id: ing.id });
+    }
+    toast('Pago registrado en ingresos');
+  }
+  await cargarTodo();
+}
+
+function renderCitas(){
+  const cont = document.getElementById('listaCitas');
+  const ordenadas = [...citas].sort((a,b) => (a.fecha+a.hora).localeCompare(b.fecha+b.hora));
+  if(!ordenadas.length){
+    cont.innerHTML = `<div class="vacio"><div>No hay citas agendadas</div></div>`;
+    return;
+  }
+  cont.innerHTML = ordenadas.map(c => {
+    const pagada = c.pagado === 'Pagado';
+    const badge = c.estado === 'Realizada' ? 'badge-verde' : (c.estado === 'Pendiente' ? 'badge-amarillo' : 'badge-rosa');
+    const metodoBadge = c.metodo === 'Transferencia' ? 'badge-lila' : (c.metodo === 'Mixto' ? 'badge-dorado' : 'badge-gris');
+    const recargoTxt = c.recargo > 0 ? ` · +${c.recargo_pct}%` : '';
+    return `
+    <div class="item ${pagada?'pagada':'porcobrar'}">
+      <div class="item-info">
+        <strong>${escapeHtml(c.clienta_nombre)}</strong>
+        <small>${escapeHtml(c.servicio_nombre)} · ${c.fecha} ${c.hora}</small>
+        <span class="pago-detalle ${pagada?'verde':'dorado'}">${iconoMetodo(c.metodo)} ${c.metodo}${recargoTxt} · ${fmtCUP(c.total)}</span>
+      </div>
+      <div class="item-right">
+        <span class="badge ${pagada?'badge-verde':'badge-amarillo'}">${pagada?'✓ Pagado':'Por cobrar'}</span>
+        <span class="badge ${metodoBadge}">${c.metodo}</span>
+        <span class="badge ${badge}">${c.estado}</span>
+        <button class="btn ${pagada?'btn-secundario':'btn-verde'} btn-sm" onclick="alternarPagoCita(${c.id})">
+          ${pagada?'✕':'✓'}
+        </button>
+        <button class="btn-icon" onclick="eliminarCita(${c.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// =====================================================
+// MÉTODOS DE PAGO — INGRESOS
+// =====================================================
+let metodoIng = 'Efectivo';
+function seleccionarMetodoIng(m){
+  metodoIng = m;
+  document.querySelectorAll('#metodoPillsIng .metodo-pill').forEach(p => {
+    p.classList.toggle('activo', p.dataset.metodo === m);
+  });
+  document.getElementById('recargoPanelIng').classList.toggle('visible', m==='Transferencia' || m==='Mixto');
+  if(m!=='Transferencia' && m!=='Mixto') document.getElementById('ingRecargo').value = 0;
+  actualizarTotalIngreso();
+}
+function actualizarTotalIngreso(){
+  const subtotal = parseFloat(document.getElementById('ingImporte').value)||0;
+  let recargoPct = parseFloat(document.getElementById('ingRecargo').value)||0;
+  if(metodoIng !== 'Transferencia' && metodoIng !== 'Mixto') recargoPct = 0;
+  const recargo = subtotal * (recargoPct/100);
+  const total = subtotal + recargo;
+  document.getElementById('ingSubtotal').textContent = fmtCUP(subtotal);
+  document.getElementById('ingRecargoRow').style.display = recargoPct>0 ? 'flex' : 'none';
+  document.getElementById('ingRecargoVal').textContent = '+'+fmtCUP(recargo)+' ('+recargoPct+'%)';
+  document.getElementById('ingTotal').textContent = fmtCUP(total);
+}
+function alCambiarServicioIngreso(){
+  const servicioId = document.getElementById('ingServicio').value;
+  const servicio = servicios.find(s => s.id == servicioId);
+  if(servicio){
+    document.getElementById('ingImporte').value = servicio.precio;
+    actualizarTotalIngreso();
+  }
+}
+
+async function agregarIngreso(){
+  const clientaId = document.getElementById('ingClienta').value;
+  const servicioId = document.getElementById('ingServicio').value;
+  const subtotal = parseFloat(document.getElementById('ingImporte').value);
+  const fecha = document.getElementById('ingFecha').value || new Date().toISOString().slice(0,10);
+  if(!clientaId || !servicioId || isNaN(subtotal) || subtotal<=0){ toast('Completa todos los campos'); return; }
+  const clienta = clientas.find(c => c.id == clientaId);
+  const servicio = servicios.find(s => s.id == servicioId);
+  let recargoPct = parseFloat(document.getElementById('ingRecargo').value)||0;
+  if(metodoIng !== 'Transferencia' && metodoIng !== 'Mixto') recargoPct = 0;
+  const recargo = subtotal * (recargoPct/100);
+  const total = subtotal + recargo;
+
+  await dbInsert('ingresos', {
+    clienta_id: clientaId,
+    clienta_nombre: clienta ? clienta.nombre : '—',
+    servicio_id: servicioId,
+    servicio_nombre: servicio ? servicio.nombre : '—',
+    concepto: `${servicio?servicio.nombre:'Servicio'} - ${clienta?clienta.nombre:'Clienta'}`,
+    subtotal, metodo: metodoIng, recargo_pct: recargoPct, recargo, total,
+    fecha, origen: 'manual'
+  });
+  document.getElementById('ingImporte').value = '';
+  document.getElementById('ingRecargo').value = 0;
+  seleccionarMetodoIng('Efectivo');
+  toast('Ingreso registrado');
+  await cargarTodo();
+}
+function eliminarIngreso(id){
+  const ing = ingresos.find(i => i.id === id);
+  const aviso = ing?.origen === 'cita'
+    ? 'Este ingreso viene de una cita. La cita quedará Por cobrar.'
+    : '¿Eliminar este ingreso?';
+  pedirConfirmar(aviso, async () => {
+    if(ing?.origen === 'cita' && ing.cita_id){
+      await dbUpdate('citas', ing.cita_id, { pagado: 'Por cobrar', ingreso_id: null });
+    }
+    await dbDelete('ingresos', id);
+    toast('Ingreso eliminado');
+    await cargarTodo();
+  });
+}
+function renderIngresos(){
+  const cont = document.getElementById('listaIngresos');
+  const ordenados = [...ingresos].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  const totalGeneral = ingresos.reduce((s,i) => s + Number(i.total||0), 0);
+  const mesActual = new Date().toISOString().slice(0,7);
+  const mesTotal = ingresos.filter(i => (i.fecha||'').startsWith(mesActual)).reduce((s,i) => s + Number(i.total||0), 0);
+  const pendientes = citas.filter(c => c.pagado === 'Por cobrar').reduce((s,c) => s + Number(c.total||0), 0);
+
+  document.getElementById('statsIngresos').innerHTML = `
+    <div class="stat verde"><div class="stat-icon">💰</div><div class="stat-num" style="font-size:1rem;">${fmtCUP(totalGeneral)}</div><div class="stat-lbl">Total cobrado</div></div>
+    <div class="stat"><div class="stat-icon">📅</div><div class="stat-num" style="font-size:1rem;">${fmtCUP(mesTotal)}</div><div class="stat-lbl">Este mes</div></div>
+    <div class="stat rojo"><div class="stat-icon">⏳</div><div class="stat-num" style="font-size:1rem;">${fmtCUP(pendientes)}</div><div class="stat-lbl">Por cobrar</div></div>`;
+
+  if(!ordenados.length){
+    cont.innerHTML = `<div class="vacio"><div>Sin ingresos registrados</div></div>`;
+    return;
+  }
+  cont.innerHTML = ordenados.map(i => {
+    const auto = i.origen === 'cita';
+    const recargoTxt = i.recargo > 0 ? ` · +${i.recargo_pct}%` : '';
+    return `
+    <div class="item">
+      <div class="item-info">
+        <strong>${escapeHtml(i.concepto||i.clienta_nombre||'Ingreso')}</strong>
+        <small>${i.fecha}${auto?' · ⚡ Desde cita':''}</small>
+        <span class="pago-detalle">${iconoMetodo(i.metodo)} ${i.metodo}${recargoTxt}</span>
+      </div>
+      <div class="item-right">
+        <span class="badge badge-verde">+${fmtCUP(i.total)}</span>
+        <button class="btn-icon" onclick="eliminarIngreso(${i.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// =====================================================
+// MÉTODOS DE PAGO — GASTOS
+// =====================================================
+let metodoGas = 'Efectivo';
+function seleccionarMetodoGas(m){
+  metodoGas = m;
+  document.querySelectorAll('#metodoPillsGas .metodo-pill').forEach(p => {
+    p.classList.toggle('activo', p.dataset.metodo === m);
+  });
+  document.getElementById('recargoPanelGas').classList.toggle('visible', m==='Transferencia' || m==='Mixto');
+  if(m!=='Transferencia' && m!=='Mixto') document.getElementById('gasRecargo').value = 0;
+  actualizarTotalGasto();
+}
+function actualizarTotalGasto(){
+  const subtotal = parseFloat(document.getElementById('gasImporte').value)||0;
+  let recargoPct = parseFloat(document.getElementById('gasRecargo').value)||0;
+  if(metodoGas !== 'Transferencia' && metodoGas !== 'Mixto') recargoPct = 0;
+  const recargo = subtotal * (recargoPct/100);
+  const total = subtotal + recargo;
+  document.getElementById('gasSubtotal').textContent = fmtCUP(subtotal);
+  document.getElementById('gasRecargoRow').style.display = recargoPct>0 ? 'flex' : 'none';
+  document.getElementById('gasRecargoVal').textContent = '+'+fmtCUP(recargo)+' ('+recargoPct+'%)';
+  document.getElementById('gasTotal').textContent = fmtCUP(total);
+}
+
+async function agregarGasto(){
+  const concepto = document.getElementById('gasConcepto').value.trim();
+  const subtotal = parseFloat(document.getElementById('gasImporte').value);
+  const fecha = document.getElementById('gasFecha').value || new Date().toISOString().slice(0,10);
+  if(!concepto || isNaN(subtotal) || subtotal<=0){ toast('Completa concepto e importe'); return; }
+  let recargoPct = parseFloat(document.getElementById('gasRecargo').value)||0;
+  if(metodoGas !== 'Transferencia' && metodoGas !== 'Mixto') recargoPct = 0;
+  const recargo = subtotal * (recargoPct/100);
+  const total = subtotal + recargo;
+
+  await dbInsert('gastos', {
+    concepto,
+    categoria: document.getElementById('gasCategoria').value,
+    origen: document.getElementById('gasOrigen').value,
+    proveedor: document.getElementById('gasProveedor').value.trim(),
+    subtotal, metodo: metodoGas, recargo_pct: recargoPct, recargo, total,
+    fecha
+  });
+  document.getElementById('gasConcepto').value = '';
+  document.getElementById('gasImporte').value = '';
+  document.getElementById('gasProveedor').value = '';
+  document.getElementById('gasRecargo').value = 0;
+  seleccionarMetodoGas('Efectivo');
+  toast('Gasto registrado');
+  await cargarTodo();
+}
+function eliminarGasto(id){
+  pedirConfirmar('¿Eliminar este gasto?', async () => {
+    await dbDelete('gastos', id);
+    toast('Gasto eliminado');
+    await cargarTodo();
+  });
+}
+function renderGastos(){
+  const cont = document.getElementById('listaGastos');
+  const ordenados = [...gastos].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  const mesActual = new Date().toISOString().slice(0,7);
+  const mesTotal = gastos.filter(g => (g.fecha||'').startsWith(mesActual)).reduce((s,g) => s + Number(g.total||0), 0);
+  const totalInversiones = gastos.filter(g => g.origen === 'Inversión').reduce((s,g) => s + Number(g.total||0), 0);
+  const totalGastosOp = gastos.filter(g => g.origen === 'Gasto').reduce((s,g) => s + Number(g.total||0), 0);
+
+  document.getElementById('statsGastos').innerHTML = `
+    <div class="stat"><div class="stat-icon">📅</div><div class="stat-num" style="font-size:1rem;">${fmtCUP(mesTotal)}</div><div class="stat-lbl">Gastos este mes</div></div>
+    <div class="stat rojo"><div class="stat-icon">💸</div><div class="stat-num" style="font-size:1rem;">${fmtCUP(totalGastosOp)}</div><div class="stat-lbl">Operativos</div></div>
+    <div class="stat"><div class="stat-icon">📈</div><div class="stat-num" style="font-size:1rem;">${fmtCUP(totalInversiones)}</div><div class="stat-lbl">Inversiones</div></div>`;
+
+  if(!ordenados.length){
+    cont.innerHTML = `<div class="vacio"><div>Sin gastos registrados</div></div>`;
+    return;
+  }
+  cont.innerHTML = ordenados.map(g => {
+    const esInversion = g.origen === 'Inversión';
+    const recargoTxt = g.recargo > 0 ? ` · +${g.recargo_pct}%` : '';
+    return `
+    <div class="item ${esInversion?'inversion':'gasto'}">
+      <div class="item-info">
+        <strong>${escapeHtml(g.concepto)}</strong>
+        <small>${g.fecha} · ${escapeHtml(g.categoria||'')}${g.proveedor?' · '+escapeHtml(g.proveedor):''}</small>
+        <span class="pago-detalle rojo">${iconoMetodo(g.metodo)} ${g.metodo}${recargoTxt}</span>
+      </div>
+      <div class="item-right">
+        <span class="badge ${esInversion?'badge-lila':'badge-rojo'}">${esInversion?'📈 Inversión':'💸 Gasto'}</span>
+        <span class="badge badge-rojo">−${fmtCUP(g.total)}</span>
+        <button class="btn-icon" onclick="eliminarGasto(${g.id})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// =====================================================
+// CÁLCULOS FINANCIEROS
+// =====================================================
+function calcularFinanzas(){
+  const totalIngresos = ingresos.reduce((s,i) => s + Number(i.total||0), 0);
+  const totalGastosOp = gastos.filter(g => g.origen === 'Gasto').reduce((s,g) => s + Number(g.total||0), 0);
+  const totalInversiones = gastos.filter(g => g.origen === 'Inversión').reduce((s,g) => s + Number(g.total||0), 0);
+  const gananciaNeta = totalIngresos - totalGastosOp;
+  const margen = totalIngresos > 0 ? (gananciaNeta/totalIngresos)*100 : 0;
+  const porCobrar = citas.filter(c => c.pagado === 'Por cobrar').reduce((s,c) => s + Number(c.total||0), 0);
+  const mesActual = new Date().toISOString().slice(0,7);
+  const ingMes = ingresos.filter(i => (i.fecha||'').startsWith(mesActual)).reduce((s,i) => s + Number(i.total||0), 0);
+  const gasMesOp = gastos.filter(g => (g.fecha||'').startsWith(mesActual) && g.origen === 'Gasto').reduce((s,g) => s + Number(g.total||0), 0);
+  const invMes = gastos.filter(g => (g.fecha||'').startsWith(mesActual) && g.origen === 'Inversión').reduce((s,g) => s + Number(g.total||0), 0);
+  return {
+    totalIngresos, totalGastosOp, totalInversiones, gananciaNeta, margen,
+    porCobrar, ingMes, gasMesOp, invMes, balanceMes: ingMes - gasMesOp
+  };
+}
+
+function renderInicio(){
+  const hoy = new Date().toISOString().slice(0,10);
+  const f = calcularFinanzas();
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-icon">👩</div><div class="stat-num">${clientas.length}</div><div class="stat-lbl">Clientas</div></div>
+    <div class="stat"><div class="stat-icon">📅</div><div class="stat-num">${citas.length}</div><div class="stat-lbl">Citas</div></div>
+    <div class="stat verde"><div class="stat-icon">💰</div><div class="stat-num" style="font-size:.95rem;">${fmtCUP(f.totalIngresos)}</div><div class="stat-lbl">Ingresos</div></div>
+    <div class="stat rojo"><div class="stat-icon">💸</div><div class="stat-num" style="font-size:.95rem;">${fmtCUP(f.totalGastosOp)}</div><div class="stat-lbl">Gastos</div></div>
+    <div class="stat ${f.gananciaNeta>=0?'verde':'rojo'}"><div class="stat-icon">${f.gananciaNeta>=0?'📈':'📉'}</div><div class="stat-num" style="font-size:.95rem;">${fmtCUP(f.gananciaNeta)}</div><div class="stat-lbl">Ganancia neta</div></div>`;
+
+  document.getElementById('balanceMes').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.6rem;padding:.9rem;border-radius:var(--radio-md);background:linear-gradient(135deg,#fdf8f5,#fbeaf1);border:1px solid var(--borde);">
+      <div style="text-align:center;"><div style="font-size:1rem;font-weight:600;color:var(--verde);">${fmtCUP(f.ingMes)}</div><div style="font-size:.65rem;color:var(--texto-suave);text-transform:uppercase;">Ingresos mes</div></div>
+      <div style="text-align:center;"><div style="font-size:1rem;font-weight:600;color:var(--rojo-fuerte);">−${fmtCUP(f.gasMesOp)}</div><div style="font-size:.65rem;color:var(--texto-suave);text-transform:uppercase;">Gastos mes</div></div>
+      <div style="text-align:center;"><div style="font-size:1rem;font-weight:600;color:${f.balanceMes>=0?'var(--verde)':'var(--rojo-fuerte)'};">${fmtCUP(f.balanceMes)}</div><div style="font-size:.65rem;color:var(--texto-suave);text-transform:uppercase;">Balance</div></div>
+      <div style="text-align:center;"><div style="font-size:1rem;font-weight:600;">${fmtCUP(f.porCobrar)}</div><div style="font-size:.65rem;color:var(--texto-suave);text-transform:uppercase;">Por cobrar</div></div>
+    </div>`;
+
+  const cont = document.getElementById('proximasCitas');
+  const proximas = citas.filter(c => c.fecha >= hoy && c.estado !== 'Realizada')
+                        .sort((a,b) => (a.fecha+a.hora).localeCompare(b.fecha+b.hora))
+                        .slice(0,5);
+  if(!proximas.length){
+    cont.innerHTML = `<div class="vacio"><div>No hay citas próximas</div></div>`;
+    return;
+  }
+  cont.innerHTML = proximas.map(c => {
+    const pagada = c.pagado === 'Pagado';
+    return `
+    <div class="item ${pagada?'pagada':'porcobrar'}">
+      <div class="item-info">
+        <strong>${escapeHtml(c.clienta_nombre)}</strong>
+        <small>${escapeHtml(c.servicio_nombre)} · ${fmtCUP(c.total)}</small>
+      </div>
+      <div class="item-right">
+        <span class="badge ${pagada?'badge-verde':'badge-amarillo'}">${pagada?'✓ Pagado':'Por cobrar'}</span>
+        <span class="badge badge-gris">${c.fecha}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// =====================================================
+// SELECTS
+// =====================================================
+function actualizarSelects(){
+  const selCli = document.getElementById('citaClienta');
+  const selServ = document.getElementById('citaServicio');
+  selCli.innerHTML = clientas.length
+    ? clientas.map(c => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join('')
+    : '<option value="">— Añade clienta —</option>';
+  selServ.innerHTML = servicios.length
+    ? servicios.map(s => `<option value="${s.id}">${escapeHtml(s.nombre)} · ${fmtCUP(s.precio)}</option>`).join('')
+    : '<option value="">— Añade servicio —</option>';
+
+  const ingCli = document.getElementById('ingClienta');
+  const ingServ = document.getElementById('ingServicio');
+  if(ingCli) ingCli.innerHTML = clientas.length
+    ? clientas.map(c => `<option value="${c.id}">${escapeHtml(c.nombre)}</option>`).join('')
+    : '<option value="">— Añade clienta —</option>';
+  if(ingServ) ingServ.innerHTML = servicios.length
+    ? servicios.map(s => `<option value="${s.id}">${escapeHtml(s.nombre)} · ${fmtCUP(s.precio)}</option>`).join('')
+    : '<option value="">— Añade servicio —</option>';
+}
+
+// =====================================================
+// RENDER GLOBAL
+// =====================================================
+function renderTodo(){
+  renderClientas();
+  renderServicios();
+  renderCitas();
+  renderIngresos();
+  renderGastos();
+  renderInicio();
+  actualizarSelects();
+  actualizarTotalCita();
+  actualizarTotalIngreso();
+  actualizarTotalGasto();
+}
+
+// =====================================================
+// LOADER
+// =====================================================
+const loader = document.getElementById('loader');
+const progreso = document.getElementById('progreso');
+const loaderTexto = document.getElementById('loaderTexto');
+let pct = 0;
+function avanzarCarga(){
+  pct += Math.random()*14+5;
+  if(pct>100) pct = 100;
+  progreso.style.width = pct+'%';
+  if(pct<30) loaderTexto.textContent = 'Conectando con la nube...';
+  else if(pct<60) loaderTexto.textContent = 'Sincronizando datos...';
+  else if(pct<90) loaderTexto.textContent = 'Preparando interfaz ✨';
+  else loaderTexto.textContent = 'Todo listo';
+  if(pct<100) setTimeout(avanzarCarga, 160+Math.random()*180);
+  else setTimeout(()=>{ loader.classList.add('oculto'); setTimeout(()=>loader.style.display='none',600); }, 350);
+}
+
+// =====================================================
+// INICIALIZACIÓN
+// =====================================================
+document.getElementById('ingFecha').value = new Date().toISOString().slice(0,10);
+document.getElementById('citaFecha').value = new Date().toISOString().slice(0,10);
+document.getElementById('gasFecha').value = new Date().toISOString().slice(0,10);
+
+cargarTodo().then(()=>{
+  avanzarCarga();
+});
+</script>
+</body>
+</html>
